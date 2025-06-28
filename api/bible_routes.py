@@ -1,5 +1,4 @@
 # api/bible_routes.py
-# Эндпоинты для WebApp — список книг, глав, текста Библии (загружается по ссылке)
 
 from fastapi import APIRouter, HTTPException, Query
 from typing import List
@@ -10,16 +9,18 @@ BIBLE_URL = "https://github.com/IvanZakhvatkin/biblebot-api/releases/download/v1
 
 router = APIRouter()
 
-# Загрузка текста Библии по HTTP
+# Загрузка Библии по HTTP (с авто-редиректом и заголовком)
 try:
-    response = requests.get(BIBLE_URL)
+    response = requests.get(BIBLE_URL, headers={"User-Agent": "BibleBot"}, allow_redirects=True)
     response.raise_for_status()
-    bible_data = response.json()
+
+    try:
+        bible_data = response.json()
+    except json.JSONDecodeError:
+        raise ValueError("❌ Ответ не является корректным JSON")
 
     if not isinstance(bible_data, list):
         raise ValueError("❌ Ожидался список, но получен другой тип")
-    if not all(isinstance(entry, dict) for entry in bible_data):
-        raise ValueError("❌ Один или несколько элементов не являются словарями")
 
 except Exception as e:
     print(f"Ошибка при загрузке Bible JSON с GitHub: {e}")
@@ -38,12 +39,10 @@ for entry in bible_data:
 
 @router.get("/books", response_model=List[str])
 def get_books():
-    """Список всех книг Библии"""
     return sorted(book_set)
 
 @router.get("/chapters", response_model=List[int])
-def get_chapters(book: str = Query(..., description="Название книги")):
-    """Список глав в указанной книге"""
+def get_chapters(book: str = Query(...)):
     chapters = book_chapter_map.get(book)
     if not chapters:
         raise HTTPException(status_code=404, detail="Книга не найдена")
@@ -51,7 +50,6 @@ def get_chapters(book: str = Query(..., description="Название книги
 
 @router.get("/bible")
 def get_chapter_text(book: str = Query(...), chapter: int = Query(...)):
-    """Получить текст указанной главы"""
     for entry in bible_data:
         if entry.get("book") == book and entry.get("chapter") == chapter:
             return {
