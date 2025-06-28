@@ -1,36 +1,37 @@
 # api/bible_routes.py
-# Эндпоинты для WebApp — список книг, глав, текста Библии
+# Эндпоинты для WebApp — список книг, глав, текста Библии (загружается по ссылке)
 
 from fastapi import APIRouter, HTTPException, Query
 from typing import List
 import json
-from api.config import BIBLE_PATH
+import requests
+
+BIBLE_URL = "https://github.com/IvanZakhvatkin/biblebot-api/releases/download/v1.0.0/bible-text.json"
 
 router = APIRouter()
 
-# Загрузка и проверка структуры текста Библии
+# Загрузка текста Библии по HTTP
 try:
-    with open(BIBLE_PATH, encoding="utf-8") as f:
-        bible_data = json.load(f)
+    response = requests.get(BIBLE_URL)
+    response.raise_for_status()
+    bible_data = response.json()
 
-        # Проверка корректности структуры
-        if not isinstance(bible_data, list):
-            raise ValueError("❌ Ожидался список, но получен другой тип")
-        if not all(isinstance(entry, dict) for entry in bible_data):
-            raise ValueError("❌ Один или несколько элементов не являются словарями")
+    if not isinstance(bible_data, list):
+        raise ValueError("❌ Ожидался список, но получен другой тип")
+    if not all(isinstance(entry, dict) for entry in bible_data):
+        raise ValueError("❌ Один или несколько элементов не являются словарями")
 
 except Exception as e:
-    print(f"Ошибка при загрузке Bible JSON: {e}")
+    print(f"Ошибка при загрузке Bible JSON с GitHub: {e}")
     bible_data = []
 
-# Строим вспомогательные индексы
+# Индексация
 book_chapter_map = {}
 book_set = set()
 
 for entry in bible_data:
     book = entry.get("book")
     chapter = entry.get("chapter")
-
     if book and chapter:
         book_set.add(book)
         book_chapter_map.setdefault(book, set()).add(chapter)
