@@ -8,6 +8,7 @@ from api.routes import router as plan_router
 from api.bible_routes import router as bible_router  # теперь из api/
 from api.init_db import init_db
 
+print("✅ Загрузка FastAPI-приложения")
 app = FastAPI()
 
 # Разрешаем CORS для WebApp
@@ -19,6 +20,7 @@ app.add_middleware(
     allow_methods=["*"],
     allow_headers=["*"],
 )
+print("✅ CORS middleware успешно подключён")
 
 # Подключение маршрутов
 app.include_router(plan_router)
