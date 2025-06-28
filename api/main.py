@@ -5,9 +5,11 @@
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 from api.routes import router as plan_router
+from web_app.api.bible_routes import router as bible_router
 from api.init_db import init_db
 
 app = FastAPI()
+
 app.add_middleware(
     CORSMiddleware,
     allow_origins=["*"],
@@ -16,6 +18,7 @@ app.add_middleware(
     allow_headers=["*"],
 )
 app.include_router(plan_router)
+app.include_router(bible_router)
 
 if __name__ == "__main__":
     import uvicorn
