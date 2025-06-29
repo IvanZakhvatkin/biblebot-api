@@ -1,8 +1,5 @@
 # api/load_plan.py
 # Скрипт импорта плана чтения в базу данных
-# Использует SQLAlchemy для работы с базой данных
-# Читает JSON-файл с планом чтения и сохраняет его в табли
-
 
 import os
 import json
@@ -22,11 +19,21 @@ def load_plan_file(filepath: str, plan_name: str, db: Session):
     for entry in data:
         date = datetime.strptime(entry["date"], "%Y-%m-%d").date()
         readings = entry.get("readings", [])
-        keys = "; ".join(readings)  # 🆕 объединяем список в строку
+        keys = "; ".join(readings)
         plan = ReadingPlan(date=date, keys=keys, plan_name=plan_name)
         db.add(plan)
 
     print(f"✅ Загружен план: {plan_name} ({len(data)} записей)")
+
+
+def load_plan_from_file(filepath: str, plan_name: str):
+    """Обёртка для вызова из FastAPI"""
+    db = SessionLocal()
+    try:
+        load_plan_file(filepath, plan_name, db)
+        db.commit()
+    finally:
+        db.close()
 
 
 def load_all_plans():
